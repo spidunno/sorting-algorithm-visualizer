@@ -10,10 +10,13 @@
     "preview": "vite preview"
   },
   "dependencies": {
+    "@babel/standalone": "^7.24.5",
     "@monaco-editor/react": "^4.6.0",
+    "@types/babel__standalone": "^7.1.7",
     "react": "^18.2.0",
     "react-dom": "^18.2.0",
-    "resizable-panes-react": "^6.0.15"
+    "resizable-panes-react": "^6.0.15",
+    "usehooks-ts": "^3.1.0"
   },
   "devDependencies": {
     "@types/react": "^18.2.66",

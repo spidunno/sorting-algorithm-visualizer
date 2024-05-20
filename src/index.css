@@ -8,3 +8,7 @@
 body {
 	margin: 0;
 }
+
+.list-item {
+	transition: left 0.25s;
+}

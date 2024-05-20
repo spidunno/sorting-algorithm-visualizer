@@ -3,13 +3,14 @@ import { useCallback, useMemo, useState } from "react";
 import { Pane, ResizablePanes } from "resizable-panes-react";
 import { useInterval } from "usehooks-ts";
 import editorExtraTypes from './types?raw';
+import defaultScript from './defaultScript?raw';
 
 import "./App.css";
 
 
 import {
 	visualizeJackieSort,
-	visualizeJackieSortOld,
+	// visualizeJackieSortOld,
 } from "./business/commands";
 import { transformTypescript } from "./ts";
 
@@ -18,27 +19,36 @@ function setUpMonaco(monaco: Monaco): void {
 		.addExtraLib(editorExtraTypes);
 }
 
+let lastScript = '';
 export default function App() {
-	const [itemCount, setItemCount] = useState(50);
+	const [itemCount] = useState(50);
+	const [ swaps, setSwaps ] = useState<boolean[]>(Array(itemCount).fill(false));
+	const [ sorted, setSorted ] = useState<boolean[]>(Array(itemCount).fill(false))
 	const [items, setItems] = useState(() =>
 		[...Array(itemCount).keys()].sort(() => Math.random() - 0.5)
+		// [...Array(itemCount).keys()].map((v, i, a) => (a.length - 1) - i)
 	);
 
 	const [cursors, setCursors] = useState<number[]>([]);
 
-	const [commandGenerator, setCommandGenerator] = useState(() =>
+	const [commandGenerator, setCommandGenerator] = useState<Generator<VisualizerCommand, void, number[]> | null>(() =>
 		visualizeJackieSort(items)
 	);
 
 	useInterval(() => {
+		if (!commandGenerator) return;
 		const command = commandGenerator.next(items);
 		if (!command.done) {
+			swaps.fill(false);
 			switch (command.value.kind) {
 				case "swap": {
 					const [i, j] = [
 						command.value.firstIndex,
 						command.value.secondIndex,
 					];
+					swaps[i] = true;
+					swaps[j] = true;
+					// console.log(swaps);
 					[items[i], items[j]] = [items[j], items[i]];
 					break;
 				}
@@ -46,18 +56,52 @@ export default function App() {
 					setCursors(command.value.cursors);
 					break;
 				}
+				case "sorted": {
+					for (const index of command.value.indexes) {
+						sorted[index] = true;
+					}
+					break;
+				}
+				case "notSorted": {
+					for (const index of command.value.indexes) {
+						sorted[index] = false;
+						console.log('test');
+					}
+					break;
+				}
 			}
+			setSorted(sorted.slice());
+			setSwaps(swaps.slice());
 			setItems(items.slice());
 		}
-	}, 40);
+	}, 10);
 
-	const onTextChange = useCallback((text: string) => {
-		// const javascriptCode = transformTypescript(text)!;
-		// const newGenerator = eval?.(javascriptCode);
-		// console.log(newGenerator);
-		// if (newGenerator) {
-		// 	setCommandGenerator(newGenerator(items));
-		// }
+	const onTextChange = useCallback(async (text: string) => {
+		try {
+			const javascriptCode = transformTypescript(text)!;
+			console.log(`"${javascriptCode}"`);
+			if (lastScript === javascriptCode) return; else {
+				setItems([...Array(itemCount).keys()].sort(() => Math.random() - 0.5));
+				setSorted([]);
+				setSwaps([]);
+			}
+			if (javascriptCode) lastScript = javascriptCode;
+			const newGenerator = (await import(/* @vite-ignore */URL.createObjectURL(new Blob([`export function notSorted(indexes){return {kind: "notSorted", indexes}}
+export function sorted(indexes){return {kind: "sorted", indexes}}
+export function swap(firstIndex,secondIndex){return {kind: "swap",firstIndex, secondIndex}}
+function cursors(cursors) { return { kind: "setCursors", cursors: cursors }}
+${javascriptCode}`], { type: 'text/javascript' })))).default;
+			// console.log(newGenerator)
+			console.log(newGenerator);
+			if (typeof newGenerator === 'function') {
+				setCommandGenerator(newGenerator(items));
+			} else {
+				setCommandGenerator(null);
+			}
+		} catch(e) {
+			setCommandGenerator(null);
+			console.warn(e);
+		}
 	}, []);
 
 	return (
@@ -78,12 +122,10 @@ export default function App() {
 						beforeMount={setUpMonaco}
 						defaultLanguage="typescript"
 						theme="vs-dark"
-						defaultValue={`function* sort(items: number[]): Generator<VisualizerCommand, void, void> {
-	// Your code
-}`}
+						defaultValue={defaultScript}
 						height="100vh"
 						width="100%"
-						onChange={(text) => onTextChange(text)}
+						onChange={(text) => onTextChange(text || '')}
 					/>
 				</Pane>
 				<Pane id="visualization" size={1}>
@@ -103,9 +145,10 @@ export default function App() {
 								<div
 									className="list-item"
 									style={{
-										backgroundColor: cursors.includes(index)
-											? "green"
-											: "white",
+										backgroundColor: sorted[index] ? 'lime' : (swaps[index] ? 'red' :
+										(cursors.includes(index)
+											? "yellow"
+											: "white")),
 										border: "1px solid black",
 										height: `${
 											((item + 1) / itemCount) * 100

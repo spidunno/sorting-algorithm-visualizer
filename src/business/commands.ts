@@ -15,7 +15,11 @@ export type VisualizerNotSortedCommand = {
 	kind: "notSorted";
 	indexes: number[];
 };
-export type VisualizerCommand = VisualizerSwapCommand | VisualizerCursorCommand | VisualizerSortedCommand | VisualizerNotSortedCommand;
+export type VisualizerCommand =
+	| VisualizerSwapCommand
+	| VisualizerCursorCommand
+	| VisualizerSortedCommand
+	| VisualizerNotSortedCommand;
 
 export function swap(
 	firstIndex: number,
@@ -24,7 +28,7 @@ export function swap(
 	return { kind: "swap", firstIndex, secondIndex };
 }
 export function notSorted(indexes: number[]): VisualizerNotSortedCommand {
-	return {kind: "notSorted", indexes};
+	return { kind: "notSorted", indexes };
 }
 export function cursors(cursors: number[]): VisualizerCursorCommand {
 	return { kind: "setCursors", cursors: cursors };
@@ -91,7 +95,11 @@ export function* visualizeJackieSort(
 			yield cursors([i, i + 1]);
 			if (items[i] > items[i + 1]) {
 				yield notSorted([i, i + 1]);
-				for (let j = items.length - (sortedCount%(items.length-i) + 1); j > i; j--) {
+				for (
+					let j = items.length - ((sortedCount % (items.length - i)) + 1);
+					j > i;
+					j--
+				) {
 					yield cursors([i, j]);
 					if (items[j] < items[i]) {
 						yield notSorted([i, j]);

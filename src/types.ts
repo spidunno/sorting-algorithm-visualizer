@@ -16,14 +16,14 @@ type VisualizerNotSortedCommand = {
 	indexes: number[];
 };
 // eslint-disable-next-line @typescript-eslint/no-unused-vars
-type VisualizerCommand = VisualizerSwapCommand | VisualizerCursorCommand | VisualizerSortedCommand | VisualizerNotSortedCommand;
-
+type VisualizerCommand =
+	| VisualizerSwapCommand
+	| VisualizerCursorCommand
+	| VisualizerSortedCommand
+	| VisualizerNotSortedCommand;
 
 // eslint-disable-next-line @typescript-eslint/no-unused-vars
-function swap(
-	firstIndex: number,
-	secondIndex: number
-): VisualizerSwapCommand {
+function swap(firstIndex: number, secondIndex: number): VisualizerSwapCommand {
 	return { kind: "swap", firstIndex, secondIndex };
 }
 // eslint-disable-next-line @typescript-eslint/no-unused-vars
@@ -36,5 +36,5 @@ function sorted(indexes: number[]): VisualizerSortedCommand {
 }
 // eslint-disable-next-line @typescript-eslint/no-unused-vars
 function notSorted(indexes: number[]): VisualizerNotSortedCommand {
-	return {kind: "notSorted", indexes};
+	return { kind: "notSorted", indexes };
 }

@@ -163,7 +163,6 @@ export default function App() {
 			oscillator.current.mute();
 		} else if (!muted) {
 			oscillator.current.unmute();
-			console.log("Test");
 		}
 		if (!sortPlaying && sortFinished) {
 			reset();

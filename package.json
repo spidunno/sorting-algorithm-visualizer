@@ -11,6 +11,9 @@
   },
   "dependencies": {
     "@babel/standalone": "^7.24.5",
+    "@fortawesome/fontawesome-svg-core": "^6.5.2",
+    "@fortawesome/free-solid-svg-icons": "^6.5.2",
+    "@fortawesome/react-fontawesome": "^0.2.2",
     "@monaco-editor/react": "^4.6.0",
     "@types/babel__standalone": "^7.1.7",
     "react": "^18.2.0",

@@ -11,6 +11,8 @@ import "./App.css";
 import { visualizeJackieSort } from "./business/commands";
 import { transformTypescript } from "./ts";
 import { useOscillator } from "./business/audio";
+import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
+import * as Icons from "@fortawesome/free-solid-svg-icons";
 
 function setUpMonaco(monaco: Monaco): void {
 	monaco.languages.typescript.typescriptDefaults.addExtraLib(editorExtraTypes);
@@ -37,8 +39,17 @@ export default function App() {
 		number[]
 	> | null>(() => visualizeJackieSort(items));
 
+	const [commandGeneratorFunction, setCommandGeneratorFunction] = useState(() => visualizeJackieSort);
+
+	const [sortPlaying, setSortPlaying] = useState(false);
+	const [muted, setMuted] = useState(false);
+	const [sortFinished, setSortFinished] = useState(false);
+
+	// Run a step of the sorting algorithm every x ms
 	useInterval(() => {
 		if (!commandGenerator) return;
+		if (!sortPlaying) return;
+
 		const command = commandGenerator.next(items);
 		if (!command.done) {
 			swaps.fill(false);
@@ -77,9 +88,9 @@ export default function App() {
 			setSwaps(swaps.slice());
 			setItems(items.slice());
 			if (sorted.every((s) => s)) {
-				oscillator.current.gain.gain.setValueAtTime(0, 0);
-			} else {
-				oscillator.current.gain.gain.setValueAtTime(0.1, 0);
+				setSortPlaying(false);
+				setSortFinished(true);
+				oscillator.current.mute();
 			}
 		}
 		oscillator.current.oscillator.frequency.setValueAtTime(
@@ -88,42 +99,77 @@ export default function App() {
 		);
 	}, 10);
 
-	const onTextChange = useCallback(async (text: string) => {
-		try {
-			const javascriptCode = transformTypescript(text)!;
-			console.log(`"${javascriptCode}"`);
-			if (lastScript === javascriptCode) return;
-			else {
-				setItems([...Array(itemCount).keys()].sort(() => Math.random() - 0.5));
-				setSorted([]);
-				setSwaps([]);
-			}
-			if (javascriptCode) lastScript = javascriptCode;
-			const newGenerator = (
-				await import(
-					/* @vite-ignore */ URL.createObjectURL(
-						new Blob(
-							[
-								`${editorExtraTypes}
+	const reset = useCallback(() => {
+		const newItems =  [...Array(itemCount).keys()].sort(() => Math.random() - 0.5);
+		setItems(newItems);
+		setSortFinished(false);
+		setSorted(newItems.map(() => false));
+		setSwaps(newItems.map(() => false));
+		setCursors([]);
+		setCommandGenerator(commandGeneratorFunction(newItems));
+		
+	}, [setItems, itemCount, setSorted, setSwaps, setCursors, commandGeneratorFunction, setCommandGenerator]);
+
+	const onTextChange = useCallback(
+		async (text: string) => {
+			try {
+				const javascriptCode = transformTypescript(text)!;
+				if (lastScript === javascriptCode) return;
+				else {
+					setItems(
+						[...Array(itemCount).keys()].sort(() => Math.random() - 0.5)
+					);
+					setSorted(items.map(() => false));
+					setSwaps(items.map(() => false));
+				}
+				if (javascriptCode) lastScript = javascriptCode;
+				const newGenerator = (
+					await import(
+						/* @vite-ignore */ URL.createObjectURL(
+							new Blob(
+								[
+									`${editorExtraTypes}
 								${javascriptCode}`,
-							],
-							{ type: "text/javascript" }
+								],
+								{ type: "text/javascript" }
+							)
 						)
 					)
-				)
-			).default;
-			// console.log(newGenerator)
-			console.log(newGenerator);
-			if (typeof newGenerator === "function") {
-				setCommandGenerator(newGenerator(items));
-			} else {
+				).default;
+				if (typeof newGenerator === "function") {
+					setCommandGeneratorFunction(newGenerator);
+					setCommandGenerator(newGenerator(items));
+				} else {
+					setCommandGenerator(null);
+				}
+			} catch (e) {
 				setCommandGenerator(null);
+				console.warn(e);
 			}
-		} catch (e) {
-			setCommandGenerator(null);
-			console.warn(e);
+		},
+		[items, itemCount]
+	);
+
+	const toggleVolume = useCallback(() => {
+		if (muted && sortPlaying) {
+			oscillator.current.unmute();
+		} else {
+			oscillator.current.mute();
 		}
-	}, []);
+		setMuted(!muted);
+	}, [muted, setMuted, oscillator, sortPlaying]);
+	const togglePlaying = useCallback(() => {
+		if (sortPlaying) {
+			oscillator.current.mute();
+		} else if (!muted) {
+			oscillator.current.unmute();
+			console.log("Test");
+		}
+		if (!sortPlaying && sortFinished) {
+			reset();
+		}
+		setSortPlaying(!sortPlaying);
+	}, [sortPlaying, setSortPlaying, muted, oscillator, sortFinished, reset]);
 
 	return (
 		<div
@@ -137,9 +183,6 @@ export default function App() {
 				}
 			}
 		>
-			<button onClick={() => oscillator.current.oscillator.start()}>
-				Play
-			</button>
 			<ResizablePanes uniqueId="uniqueId" vertical resizerSize={5}>
 				<Pane id="editor" size={1} minSize={0.5}>
 					<Editor
@@ -147,10 +190,29 @@ export default function App() {
 						defaultLanguage="typescript"
 						theme="vs-dark"
 						defaultValue={defaultScript}
-						height="100vh"
+						height="90vh"
 						width="100%"
 						onChange={(text) => onTextChange(text || "")}
 					/>
+					<div
+						style={{
+							height: "10vh",
+						}}
+					>
+						<button onClick={() => toggleVolume()}>
+							<FontAwesomeIcon
+								icon={muted ? Icons.faVolumeMute : Icons.faVolumeUp}
+							/>
+						</button>
+						<button onClick={() => reset()}>
+							<FontAwesomeIcon icon={Icons.faRefresh} />
+						</button>
+						<button onClick={() => togglePlaying()}>
+							<FontAwesomeIcon
+								icon={sortPlaying ? Icons.faPause : Icons.faPlay}
+							/>
+						</button>
+					</div>
 				</Pane>
 				<Pane id="visualization" size={1}>
 					<div

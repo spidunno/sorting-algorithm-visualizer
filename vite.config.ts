@@ -7,7 +7,7 @@ export default defineConfig(({ mode }) => {
 		plugins: [react()],
 	};
 	if (mode === "gh-pages") {
-		return { ...common, base: "./sorting-algorithm-visualizer" };
+		return { ...common, base: "/sorting-algorithm-visualizer" };
 	} else {
 		return common;
 	}

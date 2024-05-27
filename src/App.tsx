@@ -14,6 +14,8 @@ import { useOscillator } from "./business/audio";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import * as Icons from "@fortawesome/free-solid-svg-icons";
 
+const JS_EXTRA_FUNCTIONS = transformTypescript(editorExtraTypes);
+
 function setUpMonaco(monaco: Monaco): void {
 	monaco.languages.typescript.typescriptDefaults.addExtraLib(editorExtraTypes);
 }
@@ -128,7 +130,7 @@ export default function App() {
 						/* @vite-ignore */ URL.createObjectURL(
 							new Blob(
 								[
-									`${editorExtraTypes}
+									`${JS_EXTRA_FUNCTIONS}
 								${javascriptCode}`,
 								],
 								{ type: "text/javascript" }

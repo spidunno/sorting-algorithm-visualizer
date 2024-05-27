@@ -1,4 +1,4 @@
-import { MonacoEditor as Editor, MonacoEditor } from "solid-monaco";
+import { MonacoEditor } from "solid-monaco";
 import type { Monaco } from '@monaco-editor/loader';
 // import { useCallback, useEffect, useRef, useState } from "solid-js";
 import { PanelGroup, Panel, ResizeHandle } from "solid-resizable-panels";

@@ -1,6 +1,6 @@
-import { useEffect, useRef } from "react";
+import { onCleanup } from "solid-js";
 
-export type UseOscillator = {
+export type CreateOscillator = {
 	ctx: AudioContext;
 	oscillator: OscillatorNode;
 	gain: GainNode;
@@ -9,9 +9,7 @@ export type UseOscillator = {
 	unmute: () => void;
 };
 
-export function useOscillator(): React.MutableRefObject<UseOscillator> {
-	const useOscillatorObject = useRef<UseOscillator>(null!);
-	useEffect(() => {
+export function createOscillator() {
 		let hasStarted = false;
 		const audioCtx = new AudioContext();
 
@@ -23,7 +21,7 @@ export function useOscillator(): React.MutableRefObject<UseOscillator> {
 
 		oscillatorNode.connect(gainNode).connect(audioCtx.destination);
 
-		useOscillatorObject.current = {
+		const createOscillatorObject: CreateOscillator = {
 			ctx: audioCtx,
 			oscillator: oscillatorNode,
 			gain: gainNode,
@@ -40,11 +38,10 @@ export function useOscillator(): React.MutableRefObject<UseOscillator> {
 				gainNode.gain.setValueAtTime(0, audioCtx.currentTime);
 			},
 		};
-
-		return () => {
+		
+		onCleanup(() => {
 			audioCtx.close();
-		};
-	}, []);
+		});
 
-	return useOscillatorObject;
+		return createOscillatorObject;
 }

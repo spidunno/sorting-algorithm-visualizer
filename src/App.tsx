@@ -1,7 +1,8 @@
-import Editor, { Monaco } from "@monaco-editor/react";
-import { useCallback, useEffect, useRef, useState } from "react";
-import { Pane, ResizablePanes } from "resizable-panes-react";
-import { useInterval } from "usehooks-ts";
+import { MonacoEditor as Editor, MonacoEditor } from "solid-monaco";
+import type { Monaco } from '@monaco-editor/loader';
+// import { useCallback, useEffect, useRef, useState } from "solid-js";
+import { PanelGroup, Panel, ResizeHandle } from "solid-resizable-panels";
+// import { useInterval } from "usehooks-ts";
 import defaultScript from "./defaultScript?raw";
 import editorExtraTypes from "./types?raw";
 
@@ -10,9 +11,11 @@ import "./App.css";
 
 import { visualizeJackieSort } from "./business/commands";
 import { transformTypescript } from "./ts";
-import { useOscillator } from "./business/audio";
-import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
-import * as Icons from "@fortawesome/free-solid-svg-icons";
+import { createOscillator } from "./business/audio";
+// import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
+// import * as Icons from "@fortawesome/free-solid-svg-icons";
+import { Pause, Play, RefreshCw, Volume2, VolumeX } from "lucide-solid";
+import { createEffect, createSignal } from "solid-js";
 
 const JS_EXTRA_FUNCTIONS = transformTypescript(editorExtraTypes);
 console.log(JS_EXTRA_FUNCTIONS);
@@ -22,55 +25,53 @@ function setUpMonaco(monaco: Monaco): void {
 }
 // let lastScript = "";
 export default function App() {
-	const [itemCount] = useState(50);
-	const interval = useRef<number | null>(null);
-	const [swaps, setSwaps] = useState<boolean[]>(Array(itemCount).fill(false));
-	const [sorted, setSorted] = useState<boolean[]>(Array(itemCount).fill(false));
-	const [items, setItems] = useState(
-		() => [...Array(itemCount).keys()].sort(() => Math.random() - 0.5)
-		// [...Array(itemCount).keys()].map((v, i, a) => (a.length - 1) - i)
-	);
+	const [itemCount] = createSignal(50);
+	let interval: ReturnType<typeof setInterval> | null = null;
+	const [swaps, setSwaps] = createSignal<boolean[]>(Array(itemCount()).fill(false));
+	const [sorted, setSorted] = createSignal<boolean[]>(Array(itemCount()).fill(false));
+	const [items, setItems] = createSignal([...Array(itemCount()).keys()].sort(() => Math.random() - 0.5));
 
-	const [cursors, setCursors] = useState<number[]>([]);
-	const [latestCursor, setLatestCursor] = useState(-1);
+	const [cursors, setCursors] = createSignal<number[]>([]);
+	const [latestCursor, setLatestCursor] = createSignal(-1);
 
-	const oscillator = useOscillator();
+	const oscillator = createOscillator();
 
-	const [commandGenerator, setCommandGenerator] = useState<Generator<
+	const [commandGenerator, setCommandGenerator] = createSignal<Generator<
 		VisualizerCommand,
 		void,
 		number[]
-	> | null>(() => visualizeJackieSort(items));
+	> | null>(visualizeJackieSort(items()));
 
-	const [commandGeneratorFunction, setCommandGeneratorFunction] = useState(() => visualizeJackieSort);
+	const [commandGeneratorFunction, setCommandGeneratorFunction] = createSignal(visualizeJackieSort);
 
-	const [sortPlaying, setSortPlaying] = useState(false);
-	const [muted, setMuted] = useState(false);
-	const [sortFinished, setSortFinished] = useState(false);
+	const [sortPlaying, setSortPlaying] = createSignal(false);
+	const [muted, setMuted] = createSignal(false);
+	const [sortFinished, setSortFinished] = createSignal(false);
 	// useEffect(() => {
 	// 	if(commandGeneratorFunction) setCommandGenerator(commandGeneratorFunction(items));
 	// }, [commandGenerator])
-	useEffect(() => {
-
-		if (sortPlaying && commandGenerator) {
-			interval.current = setInterval(() => {
+	createEffect(() => {
+		if (interval) clearInterval(interval);
+		const gen = commandGenerator();
+		if (sortPlaying() && gen) {
+			interval = setInterval(() => {
 				// if (!commandGenerator) return;
 				// if (!sortPlaying) return;
 
-				const command = commandGenerator.next(items);
+				const command = gen.next(items());
 				if (!command.done) {
-					swaps.fill(false);
+					swaps().fill(false);
 					switch (command.value.kind) {
 						case "swap": {
 							const [i, j] = [command.value.firstIndex, command.value.secondIndex];
-							swaps[i] = true;
-							swaps[j] = true;
-							[items[i], items[j]] = [items[j], items[i]];
+							swaps()[i] = true;
+							swaps()[j] = true;
+							[items()[i], items()[j]] = [items()[j], items()[i]];
 							break;
 						}
 						case "setCursors": {
 							const newCursor = command.value.cursors.find(
-								(c) => !cursors.includes(c)
+								(c) => !cursors().includes(c)
 							);
 							if (newCursor) {
 								setLatestCursor(newCursor);
@@ -80,36 +81,36 @@ export default function App() {
 						}
 						case "sorted": {
 							for (const index of command.value.indexes) {
-								sorted[index] = true;
+								sorted()[index] = true;
 							}
 							break;
 						}
 						case "notSorted": {
 							for (const index of command.value.indexes) {
-								sorted[index] = false;
+								sorted()[index] = false;
 							}
 							break;
 						}
 					}
-					setSorted(sorted.slice());
-					setSwaps(swaps.slice());
-					setItems(items.slice());
-					if (sorted.every((s) => s)) {
+					setSorted(sorted().slice());
+					setSwaps(swaps().slice());
+					setItems(items().slice());
+					if (sorted().every((s) => s)) {
 						setSortPlaying(false);
 						setSortFinished(true);
-						oscillator.current.mute();
+						oscillator.mute();
 					}
 				}
-				oscillator.current.oscillator.frequency.setValueAtTime(
-					150 + ((latestCursor / itemCount) * 1350),
-					oscillator.current.ctx.currentTime
+				oscillator.oscillator.frequency.setValueAtTime(
+					150 + ((latestCursor() / itemCount()) * 1350),
+					oscillator.ctx.currentTime
 				);
 			}, 10);
 		} else {
-			if (typeof interval.current === 'number') clearInterval(interval.current);
+			if (interval) clearInterval(interval);
 		}
-		return () => { if (typeof interval.current === 'number') clearInterval(interval.current) };
-	}, [sortPlaying, commandGenerator, latestCursor]);
+	});
+
 	// Run a step of the sorting algorithm every x ms
 	// useInterval(() => {
 	// 	if (!commandGenerator) return;
@@ -166,154 +167,142 @@ export default function App() {
 
 	const reset = /*useCallback(*/() => {
 		setItems(
-			[...Array(itemCount).keys()].sort(() => Math.random() - 0.5)
+			[...Array(itemCount()).keys()].sort(() => Math.random() - 0.5)
 		);
-		setSorted(items.map(() => false));
-		setSwaps(items.map(() => false));
+		setSorted(items().map(() => false));
+		setSwaps(items().map(() => false));
 		setSortFinished(false);
 		setCursors([]);
-		setCommandGenerator(commandGeneratorFunction(items));
+		setCommandGenerator(commandGeneratorFunction()(items()));
 		setLatestCursor(0);
 
 	}/*, [setItems, itemCount, setSorted, setSwaps, setCursors, commandGeneratorFunction, setCommandGenerator])*/;
 
-	const onTextChange = useCallback(
-		async (text: string) => {
-			try {
-				const javascriptCode = transformTypescript(text);
-				// if (lastScript === javascriptCode) return;
-				// else {
-				// }
-				if (javascriptCode) {
-					// lastScript = javascriptCode;
-					const newGenerator = (
-						await import(
+	const onTextChange = async (text: string) => {
+		try {
+			const javascriptCode = transformTypescript(text);
+			// if (lastScript === javascriptCode) return;
+			// else {
+			// }
+			if (javascriptCode) {
+				// lastScript = javascriptCode;
+				const newGenerator = (
+					await import(
 						/* @vite-ignore */ URL.createObjectURL(
-							new Blob(
-								[
-									`${JS_EXTRA_FUNCTIONS}
+						new Blob(
+							[
+								`${JS_EXTRA_FUNCTIONS}
 								${javascriptCode}`,
-								],
-								{ type: "text/javascript" }
-							)
+							],
+							{ type: "text/javascript" }
 						)
-						)
-					).default;
+					)
+					)
+				).default;
 
-					if (typeof newGenerator === "function") {
-						setCommandGeneratorFunction(newGenerator);
-						reset();
-					} else {
-						// setCommandGenerator(null);
-						reset();
-					}
+				if (typeof newGenerator === "function") {
+					setCommandGeneratorFunction(() => newGenerator);
+					reset();
+				} else {
+					// setCommandGenerator(null);
+					reset();
 				}
-			} catch (e) {
-				setCommandGenerator(null);
-				console.warn(e);
 			}
-		},
-		[items, itemCount]
-	);
+		} catch (e) {
+			setCommandGenerator(null);
+			console.warn(e);
+		}
+	};
 
-	const toggleVolume = useCallback(() => {
-		if (muted && sortPlaying) {
-			oscillator.current.unmute();
+	const toggleVolume = () => {
+		if (muted() && sortPlaying()) {
+			oscillator.unmute();
 		} else {
-			oscillator.current.mute();
+			oscillator.mute();
 		}
-		setMuted(!muted);
-	}, [muted, setMuted, oscillator, sortPlaying]);
-	const togglePlaying = useCallback(() => {
-		if (sortPlaying) {
-			oscillator.current.mute();
-		} else if (!muted) {
-			oscillator.current.unmute();
+		setMuted(!muted());
+	};
+	const togglePlaying = () => {
+		if (sortPlaying()) {
+			oscillator.mute();
+		} else if (!muted()) {
+			oscillator.unmute();
 		}
-		if (!sortPlaying && sortFinished) {
+		if (!sortPlaying() && sortFinished()) {
 			reset();
 		}
-		setSortPlaying(!sortPlaying);
-	}, [sortPlaying, setSortPlaying, muted, oscillator, sortFinished, reset]);
+		setSortPlaying(!sortPlaying());
+	};
 
 	return (
-		<div
-			style={
-				{
-					// width: "100%",
-					// height: "100%",
-					// display: "flex",
-					// flexDirection: "row",
-					// gap: "12px",
-				}
-			}
-		>
-			<ResizablePanes uniqueId="uniqueId" vertical resizerSize={5}>
-				<Pane id="editor" size={1} minSize={0.5}>
-					<Editor
-						beforeMount={setUpMonaco}
-						defaultLanguage="typescript"
-						theme="vs-dark"
-						defaultValue={defaultScript}
-						height="90vh"
-						width="100%"
-						onChange={(text) => onTextChange(text || "")}
-					/>
-					<div
-						style={{
-							height: "10vh",
-						}}
-					>
-						<button onClick={() => toggleVolume()}>
-							<FontAwesomeIcon
-								icon={muted ? Icons.faVolumeMute : Icons.faVolumeUp}
-							/>
-						</button>
-						<button onClick={() => reset()}>
-							<FontAwesomeIcon icon={Icons.faRefresh} />
-						</button>
-						<button onClick={() => togglePlaying()}>
-							<FontAwesomeIcon
-								icon={sortPlaying ? Icons.faPause : Icons.faPlay}
-							/>
-						</button>
-					</div>
-				</Pane>
-				<Pane id="visualization" size={1}>
-					<div
-						style={{
-							flexGrow: "1",
-							height: "100%",
-							width: "100%",
-							// position: "relative",
-							display: "flex",
-							flexDirection: "row",
-							alignItems: "end",
-						}}
-					>
-						{items.map((item, index) => {
-							return (
-								<div
-									className="list-item"
-									style={{
-										backgroundColor: sorted[index]
-											? "lime"
-											: swaps[index]
-												? "red"
-												: cursors.includes(index)
-													? "yellow"
-													: "white",
-										border: "1px solid black",
-										height: `${((item + 1) / itemCount) * 100}%`,
-										width: "100%",
-									}}
-									key={index}
-								></div>
-							);
-						})}
-					</div>
-				</Pane>
-			</ResizablePanes>
-		</div>
+		<PanelGroup>
+			<Panel id="editor" initialSize={1} minSize={0.5}>
+				<MonacoEditor
+					onMount={setUpMonaco}
+					language="typescript"
+					theme="vs-dark"
+					value={defaultScript}
+					height="90vh"
+					width="100%"
+					onChange={(text) => onTextChange(text || "")}
+				/>
+				<div
+					style={{
+						height: "10vh",
+					}}
+				>
+					<button onClick={() => toggleVolume()}>
+						{/* <FontAwesomeIcon */}
+						{/* // icon={muted ? Icons.faVolumeMute : Icons.faVolumeUp} */}
+						{/* // /> */}
+						{muted() ? <VolumeX /> : <Volume2 />}
+					</button>
+					<button onClick={() => reset()}>
+						<RefreshCw />
+					</button>
+					<button onClick={() => togglePlaying()}>
+						{/* <FontAwesomeIcon */}
+						{/* icon={sortPlaying ? Icons.faPause : Icons.faPlay} */}
+						{/* /> */}
+						{sortPlaying() ? <Pause /> : <Play />}
+					</button>
+				</div>
+			</Panel>
+			<ResizeHandle />
+			<Panel id="visualization" initialSize={1}>
+				<div
+					style={{
+						'flex-grow': "1",
+						height: "100%",
+						width: "100%",
+						// position: "relative",
+						display: "flex",
+						"flex-direction": "row",
+						'align-items': "end",
+					}}
+				>
+					{items().map((item, index) => {
+						return (
+							<div
+								class="list-item"
+								style={{
+									"background-color": sorted()[index]
+										? "lime"
+										: swaps()[index]
+											? "red"
+											: cursors().includes(index)
+												? "yellow"
+												: "white",
+									border: "1px solid black",
+									height: `${((item + 1) / itemCount()) * 100}%`,
+									width: "100%",
+								}}
+							// key={index}
+							></div>
+						);
+					})}
+				</div>
+			</Panel>
+		</PanelGroup>
 	);
 }

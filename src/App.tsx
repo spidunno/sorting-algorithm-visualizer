@@ -1,5 +1,5 @@
 import Editor, { Monaco } from "@monaco-editor/react";
-import { useCallback, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { Pane, ResizablePanes } from "resizable-panes-react";
 import { useInterval } from "usehooks-ts";
 import defaultScript from "./defaultScript?raw";
@@ -15,14 +15,15 @@ import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import * as Icons from "@fortawesome/free-solid-svg-icons";
 
 const JS_EXTRA_FUNCTIONS = transformTypescript(editorExtraTypes);
+console.log(JS_EXTRA_FUNCTIONS);
 
 function setUpMonaco(monaco: Monaco): void {
 	monaco.languages.typescript.typescriptDefaults.addExtraLib(editorExtraTypes);
 }
-
-let lastScript = "";
+// let lastScript = "";
 export default function App() {
 	const [itemCount] = useState(50);
+	const interval = useRef<number | null>(null);
 	const [swaps, setSwaps] = useState<boolean[]>(Array(itemCount).fill(false));
 	const [sorted, setSorted] = useState<boolean[]>(Array(itemCount).fill(false));
 	const [items, setItems] = useState(
@@ -46,87 +47,147 @@ export default function App() {
 	const [sortPlaying, setSortPlaying] = useState(false);
 	const [muted, setMuted] = useState(false);
 	const [sortFinished, setSortFinished] = useState(false);
+	// useEffect(() => {
+	// 	if(commandGeneratorFunction) setCommandGenerator(commandGeneratorFunction(items));
+	// }, [commandGenerator])
+	useEffect(() => {
 
-	// Run a step of the sorting algorithm every x ms
-	useInterval(() => {
-		if (!commandGenerator) return;
-		if (!sortPlaying) return;
+		if (sortPlaying && commandGenerator) {
+			interval.current = setInterval(() => {
+				// if (!commandGenerator) return;
+				// if (!sortPlaying) return;
 
-		const command = commandGenerator.next(items);
-		if (!command.done) {
-			swaps.fill(false);
-			switch (command.value.kind) {
-				case "swap": {
-					const [i, j] = [command.value.firstIndex, command.value.secondIndex];
-					swaps[i] = true;
-					swaps[j] = true;
-					[items[i], items[j]] = [items[j], items[i]];
-					break;
-				}
-				case "setCursors": {
-					const newCursor = command.value.cursors.find(
-						(c) => !cursors.includes(c)
-					);
-					if (newCursor) {
-						setLatestCursor(newCursor);
+				const command = commandGenerator.next(items);
+				if (!command.done) {
+					swaps.fill(false);
+					switch (command.value.kind) {
+						case "swap": {
+							const [i, j] = [command.value.firstIndex, command.value.secondIndex];
+							swaps[i] = true;
+							swaps[j] = true;
+							[items[i], items[j]] = [items[j], items[i]];
+							break;
+						}
+						case "setCursors": {
+							const newCursor = command.value.cursors.find(
+								(c) => !cursors.includes(c)
+							);
+							if (newCursor) {
+								setLatestCursor(newCursor);
+							}
+							setCursors(command.value.cursors);
+							break;
+						}
+						case "sorted": {
+							for (const index of command.value.indexes) {
+								sorted[index] = true;
+							}
+							break;
+						}
+						case "notSorted": {
+							for (const index of command.value.indexes) {
+								sorted[index] = false;
+							}
+							break;
+						}
 					}
-					setCursors(command.value.cursors);
-					break;
-				}
-				case "sorted": {
-					for (const index of command.value.indexes) {
-						sorted[index] = true;
+					setSorted(sorted.slice());
+					setSwaps(swaps.slice());
+					setItems(items.slice());
+					if (sorted.every((s) => s)) {
+						setSortPlaying(false);
+						setSortFinished(true);
+						oscillator.current.mute();
 					}
-					break;
 				}
-				case "notSorted": {
-					for (const index of command.value.indexes) {
-						sorted[index] = false;
-					}
-					break;
-				}
-			}
-			setSorted(sorted.slice());
-			setSwaps(swaps.slice());
-			setItems(items.slice());
-			if (sorted.every((s) => s)) {
-				setSortPlaying(false);
-				setSortFinished(true);
-				oscillator.current.mute();
-			}
+				oscillator.current.oscillator.frequency.setValueAtTime(
+					150 + ((latestCursor / itemCount) * 1350),
+					oscillator.current.ctx.currentTime
+				);
+			}, 10);
+		} else {
+			if (typeof interval.current === 'number') clearInterval(interval.current);
 		}
-		oscillator.current.oscillator.frequency.setValueAtTime(
-			30 * latestCursor,
-			0
-		);
-	}, 10);
+		return () => { if (typeof interval.current === 'number') clearInterval(interval.current) };
+	}, [sortPlaying, commandGenerator, latestCursor]);
+	// Run a step of the sorting algorithm every x ms
+	// useInterval(() => {
+	// 	if (!commandGenerator) return;
+	// 	if (!sortPlaying) return;
 
-	const reset = useCallback(() => {
-		const newItems =  [...Array(itemCount).keys()].sort(() => Math.random() - 0.5);
-		setItems(newItems);
+	// 	const command = commandGenerator.next(items);
+	// 	if (!command.done) {
+	// 		swaps.fill(false);
+	// 		switch (command.value.kind) {
+	// 			case "swap": {
+	// 				const [i, j] = [command.value.firstIndex, command.value.secondIndex];
+	// 				swaps[i] = true;
+	// 				swaps[j] = true;
+	// 				[items[i], items[j]] = [items[j], items[i]];
+	// 				break;
+	// 			}
+	// 			case "setCursors": {
+	// 				const newCursor = command.value.cursors.find(
+	// 					(c) => !cursors.includes(c)
+	// 				);
+	// 				if (newCursor) {
+	// 					setLatestCursor(newCursor);
+	// 				}
+	// 				setCursors(command.value.cursors);
+	// 				break;
+	// 			}
+	// 			case "sorted": {
+	// 				for (const index of command.value.indexes) {
+	// 					sorted[index] = true;
+	// 				}
+	// 				break;
+	// 			}
+	// 			case "notSorted": {
+	// 				for (const index of command.value.indexes) {
+	// 					sorted[index] = false;
+	// 				}
+	// 				break;
+	// 			}
+	// 		}
+	// 		setSorted(sorted.slice());
+	// 		setSwaps(swaps.slice());
+	// 		setItems(items.slice());
+	// 		if (sorted.every((s) => s)) {
+	// 			setSortPlaying(false);
+	// 			setSortFinished(true);
+	// 			oscillator.current.mute();
+	// 		}
+	// 	}
+	// 	oscillator.current.oscillator.frequency.setValueAtTime(
+	// 		150 + ((latestCursor / itemCount) * 1350),
+	// 		0
+	// 	);
+	// }, 10);
+
+	const reset = /*useCallback(*/() => {
+		setItems(
+			[...Array(itemCount).keys()].sort(() => Math.random() - 0.5)
+		);
+		setSorted(items.map(() => false));
+		setSwaps(items.map(() => false));
 		setSortFinished(false);
-		setSorted(newItems.map(() => false));
-		setSwaps(newItems.map(() => false));
 		setCursors([]);
-		setCommandGenerator(commandGeneratorFunction(newItems));
-		
-	}, [setItems, itemCount, setSorted, setSwaps, setCursors, commandGeneratorFunction, setCommandGenerator]);
+		setCommandGenerator(commandGeneratorFunction(items));
+		setLatestCursor(0);
+
+	}/*, [setItems, itemCount, setSorted, setSwaps, setCursors, commandGeneratorFunction, setCommandGenerator])*/;
 
 	const onTextChange = useCallback(
 		async (text: string) => {
 			try {
-				const javascriptCode = transformTypescript(text)!;
-				if (lastScript === javascriptCode) return;
-				else {
-					setItems(
-						[...Array(itemCount).keys()].sort(() => Math.random() - 0.5)
-					);
-					setSorted(items.map(() => false));
-					setSwaps(items.map(() => false));
-				}
-				if (javascriptCode) lastScript = javascriptCode;
-				const newGenerator = (
-					await import(
+				const javascriptCode = transformTypescript(text);
+				// if (lastScript === javascriptCode) return;
+				// else {
+				// }
+				if (javascriptCode) {
+					// lastScript = javascriptCode;
+					const newGenerator = (
+						await import(
 						/* @vite-ignore */ URL.createObjectURL(
 							new Blob(
 								[
@@ -136,13 +197,16 @@ export default function App() {
 								{ type: "text/javascript" }
 							)
 						)
-					)
-				).default;
-				if (typeof newGenerator === "function") {
-					setCommandGeneratorFunction(newGenerator);
-					setCommandGenerator(newGenerator(items));
-				} else {
-					setCommandGenerator(null);
+						)
+					).default;
+
+					if (typeof newGenerator === "function") {
+						setCommandGeneratorFunction(newGenerator);
+						reset();
+					} else {
+						// setCommandGenerator(null);
+						reset();
+					}
 				}
 			} catch (e) {
 				setCommandGenerator(null);
@@ -235,10 +299,10 @@ export default function App() {
 										backgroundColor: sorted[index]
 											? "lime"
 											: swaps[index]
-											? "red"
-											: cursors.includes(index)
-											? "yellow"
-											: "white",
+												? "red"
+												: cursors.includes(index)
+													? "yellow"
+													: "white",
 										border: "1px solid black",
 										height: `${((item + 1) / itemCount) * 100}%`,
 										width: "100%",

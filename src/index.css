@@ -11,7 +11,7 @@ body {
 }
 
 .list-item {
-	transition: left 0.25s;
+	transition: height 0.075s ease;
 }
 
 #controls button, #controls input {

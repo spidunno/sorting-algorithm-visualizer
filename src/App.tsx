@@ -3,7 +3,7 @@ import type { Monaco } from '@monaco-editor/loader';
 // import { useCallback, useEffect, useRef, useState } from "solid-js";
 import { PanelGroup, Panel, PanelResizeHandle } from "solid-resizable-panels-port";
 // import { useInterval } from "usehooks-ts";
-import defaultScript from "./defaultScript?raw";
+// import defaultScriptText from "./defaultScript?raw";
 import editorExtraTypes from "./types?raw";
 
 import "./business/audio";
@@ -16,6 +16,10 @@ import { createOscillator } from "./business/audio";
 // import * as Icons from "@fortawesome/free-solid-svg-icons";
 import { Pause, Play, RefreshCw, Volume2, VolumeX } from "lucide-solid";
 import { createEffect, createSignal, Index } from "solid-js";
+
+import quicksortScript from './assets/algorithms/quicksort?raw';
+import bubblesortScript from './assets/algorithms/bubblesort?raw';
+import mergesortScript from './assets/algorithms/mergesort?raw';
 
 const JS_EXTRA_FUNCTIONS = transformTypescript(editorExtraTypes);
 // console.log(JS_EXTRA_FUNCTIONS);
@@ -30,8 +34,10 @@ export default function App() {
 	const [swaps, setSwaps] = createSignal<boolean[]>(Array(itemCount()).fill(false));
 	const [sorted, setSorted] = createSignal<boolean[]>(Array(itemCount()).fill(false));
 	const [items, setItems] = createSignal([...Array(itemCount()).keys()].sort(() => Math.random() - 0.5));
+	const [ justSet, setJustSet ] = createSignal(Array(itemCount()).fill(false));
 
 	const [cursors, setCursors] = createSignal<number[]>([]);
+	const [defaultScript, setDefaultScript] = createSignal(quicksortScript);
 	const [latestCursor, setLatestCursor] = createSignal(-1);
 
 	const oscillator = createOscillator();
@@ -65,6 +71,7 @@ export default function App() {
 				const command = gen.next(items());
 				if (!command.done) {
 					swaps().fill(false);
+					justSet().fill(false);
 					switch (command.value.kind) {
 						case "swap": {
 							const [i, j] = [command.value.firstIndex, command.value.secondIndex];
@@ -98,12 +105,14 @@ export default function App() {
 						case "set": {
 							for (const [index, value] of command.value.values) {
 								items()[index] = value;
+								justSet()[index] = true;
 							}
 						}
 					}
 					setSorted(sorted().slice());
 					setSwaps(swaps().slice());
 					setItems(items().slice());
+					setJustSet(justSet().slice());
 					if (sorted().every((s) => s)) {
 						setSortPlaying(false);
 						setSortFinished(true);
@@ -188,6 +197,7 @@ export default function App() {
 	}/*, [setItems, itemCount, setSorted, setSwaps, setCursors, commandGeneratorFunction, setCommandGenerator])*/;
 
 	const onTextChange = async (text: string) => {
+		setDefaultScript(text);
 		try {
 			const javascriptCode = transformTypescript(text);
 			// if (lastScript === javascriptCode) return;
@@ -249,7 +259,7 @@ export default function App() {
 				<MonacoEditor
 					onMount={setUpMonaco}
 					language="typescript"
-					value={defaultScript}
+					value={defaultScript()}
 					height="90vh"
 					width="100%"
 					onChange={(text) => onTextChange(text || "")}
@@ -259,9 +269,30 @@ export default function App() {
 						height: "5vh",
 						display: 'flex',
 						"justify-content": 'center',
-						"align-content": 'center'
+						"align-content": 'center',
+						position: 'relative'
 					}} id="controls"
 				>
+				<select onChange={(e) => {
+					switch (e.target.value) {
+						case 'quicksort': {
+							onTextChange(quicksortScript);
+							break;
+						}
+						case 'bubblesort': {
+							onTextChange(bubblesortScript);
+							break;
+						}
+						case 'mergesort': {
+							onTextChange(mergesortScript);
+							break;
+						}
+					}
+				}} style={{ position: 'absolute', left: '0', "min-width": '100px', "height": '32px' }}>
+					<option value="quicksort">Quicksort</option>
+					<option value="bubblesort">Bubble Sort</option>
+					<option value="mergesort">Merge Sort</option>
+				</select>
 					<button onClick={() => toggleVolume()}>
 						{/* <FontAwesomeIcon */}
 						{/* // icon={muted ? Icons.faVolumeMute : Icons.faVolumeUp} */}
@@ -310,11 +341,8 @@ export default function App() {
 								<g style={{translate: `${index * ((1 / itemCount()) * 100)}% 100%`, scale: '1 -1', transition: 'translate 0.1s ease'}}>
 									<rect
 										class="list-item"
-										fill={sorted()[index] ? "lime" : swaps()[index] ? 'red' : cursors().includes(index) ? 'yellow' : 'white'}
+										fill={sorted()[index] ? "lime" : (swaps()[index] || justSet()[index]) ? 'red' : cursors().includes(index) ? 'yellow' : 'white'}
 										stroke="black"
-										style={{
-											transition: 'all 0.1s ease',
-										}}
 										stroke-width={`${(1 / itemCount()) * 8}%`}
 										height={`${((item() + 1) / itemCount()) * 100}%`}
 										width={`${100/itemCount()}%`}

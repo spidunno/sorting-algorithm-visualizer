@@ -318,7 +318,7 @@ export default function App() {
 												? "yellow"
 												: "white",
 									stroke: "black",
-									"stroke-width": '1px',
+									"stroke-width": `${(1/itemCount()) * 8}%`,
 									// height: `${((item + 1) / itemCount()) * 100}%`,
 									// width: "100%",
 								}}

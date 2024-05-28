@@ -288,7 +288,7 @@ export default function App() {
 					}} id="controls"
 				>
 					{/* <label for="delay" style={{"text-align": 'center', "align-content": 'center', height: '32px', "margin": '4px', width: '6ch'}}>{delay()}ms</label> */}
-					<span>Delay of <input id="delay" onInput={(e) => setDelay(parseFloat(e.target.value))} value={delay()} step="1" type="number" min="1" max="1000"/>ms</span>
+					<span>Delay of <input id="delay" onInput={(e) => setDelay(parseFloat(e.target.value) || 10)} value={delay()} step="1" type="number" min="1" max="1000"/>ms</span>
 				</div>
 			</Panel>
 			<PanelResizeHandle style={{width: "2px", "background-color": "#b9b7df", margin: '2px', "border-radius": '12px', border: '1px solid #80809b', cursor: "ew-resize"}}/>
@@ -304,26 +304,33 @@ export default function App() {
 						'align-items': "end",
 					}}
 				>
+					<svg width="100%" height="100%">
 					{items().map((item, index) => {
 						return (
-							<div
+							<rect
 								class="list-item"
 								style={{
-									"background-color": sorted()[index]
+									"fill": sorted()[index]
 										? "lime"
 										: swaps()[index]
 											? "red"
 											: cursors().includes(index)
 												? "yellow"
 												: "white",
-									border: "1px solid black",
-									height: `${((item + 1) / itemCount()) * 100}%`,
-									width: "100%",
+									stroke: "black",
+									"stroke-width": '1px',
+									// height: `${((item + 1) / itemCount()) * 100}%`,
+									// width: "100%",
 								}}
+								height={`${((item + 1) / itemCount()) * 100}%`}
+								width={`${(1/itemCount()) * 100}%`}
+								x={`${index * ((1/itemCount()) * 100)}%`}
+								y={`${100 - (((item + 1) / itemCount()) * 100)}%`}
 							// key={index}
-							></div>
+							/>
 						);
 					})}
+					</svg>
 				</div>
 			</Panel>
 		</PanelGroup>

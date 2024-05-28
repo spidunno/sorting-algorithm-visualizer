@@ -1,7 +1,7 @@
 import { MonacoEditor } from "solid-monaco";
 import type { Monaco } from '@monaco-editor/loader';
 // import { useCallback, useEffect, useRef, useState } from "solid-js";
-import { PanelGroup, Panel, ResizeHandle } from "solid-resizable-panels";
+import { PanelGroup, Panel, PanelResizeHandle } from "solid-resizable-panels-port";
 // import { useInterval } from "usehooks-ts";
 import defaultScript from "./defaultScript?raw";
 import editorExtraTypes from "./types?raw";
@@ -9,7 +9,7 @@ import editorExtraTypes from "./types?raw";
 import "./business/audio";
 import "./App.css";
 
-import { visualizeJackieSort } from "./business/commands";
+import { quickSort } from "./business/commands";
 import { transformTypescript } from "./ts";
 import { createOscillator } from "./business/audio";
 // import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
@@ -21,11 +21,11 @@ const JS_EXTRA_FUNCTIONS = transformTypescript(editorExtraTypes);
 console.log(JS_EXTRA_FUNCTIONS);
 
 function setUpMonaco(monaco: Monaco): void {
+	monaco.editor.setTheme('vs-dark');
 	monaco.languages.typescript.typescriptDefaults.addExtraLib(editorExtraTypes);
 }
-// let lastScript = "";
 export default function App() {
-	const [itemCount] = createSignal(50);
+	const [itemCount, setItemCount] = createSignal(50);
 	let interval: ReturnType<typeof setInterval> | null = null;
 	const [swaps, setSwaps] = createSignal<boolean[]>(Array(itemCount()).fill(false));
 	const [sorted, setSorted] = createSignal<boolean[]>(Array(itemCount()).fill(false));
@@ -40,9 +40,9 @@ export default function App() {
 		VisualizerCommand,
 		void,
 		number[]
-	> | null>(visualizeJackieSort(items()));
+	> | null>(quickSort(items()));
 
-	const [commandGeneratorFunction, setCommandGeneratorFunction] = createSignal(visualizeJackieSort);
+	const [commandGeneratorFunction, setCommandGeneratorFunction] = createSignal(quickSort);
 
 	const [sortPlaying, setSortPlaying] = createSignal(false);
 	const [muted, setMuted] = createSignal(false);
@@ -50,6 +50,9 @@ export default function App() {
 	// useEffect(() => {
 	// 	if(commandGeneratorFunction) setCommandGenerator(commandGeneratorFunction(items));
 	// }, [commandGenerator])
+	createEffect(() => {
+		setItems([...Array(itemCount()).keys()].sort(() => Math.random() - 0.5));
+	}, [itemCount()]);
 	createEffect(() => {
 		if (interval) clearInterval(interval);
 		const gen = commandGenerator();
@@ -235,12 +238,11 @@ export default function App() {
 	};
 
 	return (
-		<PanelGroup>
-			<Panel id="editor" initialSize={1} minSize={0.5}>
+		<PanelGroup direction="horizontal">
+			<Panel id="editor" defaultSize={1} minSize={0.5}>
 				<MonacoEditor
 					onMount={setUpMonaco}
 					language="typescript"
-					theme="vs-dark"
 					value={defaultScript}
 					height="90vh"
 					width="100%"
@@ -249,7 +251,10 @@ export default function App() {
 				<div
 					style={{
 						height: "10vh",
-					}}
+						display: 'flex',
+						"justify-content": 'center',
+						"align-content": 'center'
+					}} id="controls"
 				>
 					<button onClick={() => toggleVolume()}>
 						{/* <FontAwesomeIcon */}
@@ -266,10 +271,11 @@ export default function App() {
 						{/* /> */}
 						{sortPlaying() ? <Pause /> : <Play />}
 					</button>
+					<input type="number" value={50} onChange={(e) => setItemCount(parseInt(e.target.value))}/>
 				</div>
 			</Panel>
-			<ResizeHandle />
-			<Panel id="visualization" initialSize={1}>
+			<PanelResizeHandle style={{width: "2px", "background-color": "#b9b7df", margin: '2px', "border-radius": '12px', border: '1px solid #80809b', cursor: "ew-resize"}}/>
+			<Panel id="visualization" defaultSize={1}>
 				<div
 					style={{
 						'flex-grow': "1",

@@ -15,7 +15,7 @@
     "lucide-solid": "^0.379.0",
     "solid-js": "^1.8.15",
     "solid-monaco": "^0.2.0",
-    "solid-resizable-panels": "^0.5.4"
+    "solid-resizable-panels-port": "^0.0.0"
   },
   "devDependencies": {
     "typescript": "^5.2.2",

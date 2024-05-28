@@ -145,5 +145,8 @@ export function* quickSort(items: number[]): Generator<VisualizerCommand, void, 
 		return [i + 1, arr];
 	}
 	yield* quicksort(items, 0, items.length - 1);
-	yield sorted([...Array(items.length).keys()]);
+	for (let i = 0; i < items.length; i ++) {
+		yield cursors([i]);
+		yield sorted([i]);
+	}
 }

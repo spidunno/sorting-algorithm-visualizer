@@ -12,3 +12,13 @@ body {
 .list-item {
 	transition: left 0.25s;
 }
+
+#controls > button, #controls > input {
+	background-color: #121212;
+	color: white;
+	border: 1px solid #ffffff20;
+	margin: 4px;
+	border-radius: 8px;
+	min-height: 32px;
+	height: 32px;
+}

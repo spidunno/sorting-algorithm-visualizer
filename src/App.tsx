@@ -51,9 +51,9 @@ export default function App() {
 	// useEffect(() => {
 	// 	if(commandGeneratorFunction) setCommandGenerator(commandGeneratorFunction(items));
 	// }, [commandGenerator])
-	createEffect(() => {
-		setItems([...Array(itemCount()).keys()].sort(() => Math.random() - 0.5));
-	}, [itemCount()]);
+	// createEffect(() => {
+	// 	setItems([...Array(itemCount()).keys()].sort(() => Math.random() - 0.5));
+	// }, [itemCount()]);
 	createEffect(() => {
 		if (interval) clearInterval(interval);
 		const gen = commandGenerator();
@@ -277,7 +277,7 @@ export default function App() {
 						{/* /> */}
 						{sortPlaying() ? <Pause /> : <Play />}
 					</button>
-					<input type="number" value={50} onChange={(e) => setItemCount(parseInt(e.target.value))}/>
+					<input type="number" value={50} onChange={(e) => {setItemCount(parseInt(e.target.value)); reset()}}/>
 					</div>
 					<div
 					style={{

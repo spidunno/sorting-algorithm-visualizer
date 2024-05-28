@@ -15,7 +15,7 @@ import { createOscillator } from "./business/audio";
 // import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 // import * as Icons from "@fortawesome/free-solid-svg-icons";
 import { Pause, Play, RefreshCw, Volume2, VolumeX } from "lucide-solid";
-import { createEffect, createSignal } from "solid-js";
+import { createEffect, createSignal, Index } from "solid-js";
 
 const JS_EXTRA_FUNCTIONS = transformTypescript(editorExtraTypes);
 // console.log(JS_EXTRA_FUNCTIONS);
@@ -47,7 +47,7 @@ export default function App() {
 	const [sortPlaying, setSortPlaying] = createSignal(false);
 	const [muted, setMuted] = createSignal(false);
 	const [sortFinished, setSortFinished] = createSignal(false);
-	const [ delay, setDelay ] = createSignal(10);
+	const [delay, setDelay] = createSignal(10);
 	// useEffect(() => {
 	// 	if(commandGeneratorFunction) setCommandGenerator(commandGeneratorFunction(items));
 	// }, [commandGenerator])
@@ -277,9 +277,9 @@ export default function App() {
 						{/* /> */}
 						{sortPlaying() ? <Pause /> : <Play />}
 					</button>
-					<input type="number" value={50} onChange={(e) => {setItemCount(parseInt(e.target.value)); reset()}}/>
-					</div>
-					<div
+					<input type="number" value={50} onChange={(e) => { setItemCount(parseInt(e.target.value)); reset() }} />
+				</div>
+				<div
 					style={{
 						height: "5vh",
 						display: 'flex',
@@ -288,10 +288,10 @@ export default function App() {
 					}} id="controls"
 				>
 					{/* <label for="delay" style={{"text-align": 'center', "align-content": 'center', height: '32px', "margin": '4px', width: '6ch'}}>{delay()}ms</label> */}
-					<span>Delay of <input id="delay" onInput={(e) => setDelay(parseFloat(e.target.value) || 10)} value={delay()} step="1" type="number" min="1" max="1000"/>ms</span>
+					<span>Delay of <input id="delay" onInput={(e) => setDelay(parseFloat(e.target.value) || 10)} value={delay()} step="1" type="number" min="1" max="1000" />ms</span>
 				</div>
 			</Panel>
-			<PanelResizeHandle style={{width: "2px", "background-color": "#b9b7df", margin: '2px', "border-radius": '12px', border: '1px solid #80809b', cursor: "ew-resize"}}/>
+			<PanelResizeHandle style={{ width: "2px", "background-color": "#b9b7df", margin: '2px', "border-radius": '12px', border: '1px solid #80809b', cursor: "ew-resize" }} />
 			<Panel id="visualization" defaultSize={1}>
 				<div
 					style={{
@@ -304,32 +304,24 @@ export default function App() {
 						'align-items': "end",
 					}}
 				>
-					<svg width="100%" height="100%">
-					{items().map((item, index) => {
-						return (
-							<rect
-								class="list-item"
-								style={{
-									"fill": sorted()[index]
-										? "lime"
-										: swaps()[index]
-											? "red"
-											: cursors().includes(index)
-												? "yellow"
-												: "white",
-									stroke: "black",
-									"stroke-width": `${(1/itemCount()) * 8}%`,
-									// height: `${((item + 1) / itemCount()) * 100}%`,
-									// width: "100%",
-								}}
-								height={`${((item + 1) / itemCount()) * 100}%`}
-								width={`${(1/itemCount()) * 100}%`}
-								x={`${index * ((1/itemCount()) * 100)}%`}
-								y={`${100 - (((item + 1) / itemCount()) * 100)}%`}
-							// key={index}
-							/>
-						);
-					})}
+					<svg width="100%" height="100vh" style={{position: 'relative'}}>
+						<Index each={items()}>{(item, index) => {
+							return (
+								<g style={{translate: `${index * ((1 / itemCount()) * 100)}% 100%`, scale: '1 -1', transition: 'translate 0.1s ease'}}>
+									<rect
+										class="list-item"
+										fill={sorted()[index] ? "lime" : swaps()[index] ? 'red' : cursors().includes(index) ? 'yellow' : 'white'}
+										stroke="black"
+										style={{
+											transition: 'all 0.1s ease',
+										}}
+										stroke-width={`${(1 / itemCount()) * 8}%`}
+										height={`${((item() + 1) / itemCount()) * 100}%`}
+										width={`${100/itemCount()}%`}
+									/>
+								</g>
+							);
+						}}</Index>
 					</svg>
 				</div>
 			</Panel>

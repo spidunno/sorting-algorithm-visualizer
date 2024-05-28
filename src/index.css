@@ -3,6 +3,7 @@
 	height: 100vh;
 	background-color: black;
 	color: white;
+	font-family:'Inter', Tahoma, Geneva, Verdana, sans-serif
 }
 
 body {
@@ -13,7 +14,7 @@ body {
 	transition: left 0.25s;
 }
 
-#controls > button, #controls > input {
+#controls button, #controls input {
 	background-color: #121212;
 	color: white;
 	border: 1px solid #ffffff20;

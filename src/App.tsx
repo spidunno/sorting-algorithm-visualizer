@@ -18,7 +18,7 @@ import { Pause, Play, RefreshCw, Volume2, VolumeX } from "lucide-solid";
 import { createEffect, createSignal } from "solid-js";
 
 const JS_EXTRA_FUNCTIONS = transformTypescript(editorExtraTypes);
-console.log(JS_EXTRA_FUNCTIONS);
+// console.log(JS_EXTRA_FUNCTIONS);
 
 function setUpMonaco(monaco: Monaco): void {
 	monaco.editor.setTheme('vs-dark');
@@ -47,6 +47,7 @@ export default function App() {
 	const [sortPlaying, setSortPlaying] = createSignal(false);
 	const [muted, setMuted] = createSignal(false);
 	const [sortFinished, setSortFinished] = createSignal(false);
+	const [ delay, setDelay ] = createSignal(10);
 	// useEffect(() => {
 	// 	if(commandGeneratorFunction) setCommandGenerator(commandGeneratorFunction(items));
 	// }, [commandGenerator])
@@ -94,6 +95,11 @@ export default function App() {
 							}
 							break;
 						}
+						case "set": {
+							for (const [index, value] of command.value.values) {
+								items()[index] = value;
+							}
+						}
 					}
 					setSorted(sorted().slice());
 					setSwaps(swaps().slice());
@@ -108,7 +114,7 @@ export default function App() {
 					150 + ((latestCursor() / itemCount()) * 1350),
 					oscillator.ctx.currentTime
 				);
-			}, 10);
+			}, delay());
 		} else {
 			if (interval) clearInterval(interval);
 		}
@@ -213,7 +219,7 @@ export default function App() {
 			}
 		} catch (e) {
 			setCommandGenerator(null);
-			console.warn(e);
+			// console.warn(e);
 		}
 	};
 
@@ -250,7 +256,7 @@ export default function App() {
 				/>
 				<div
 					style={{
-						height: "10vh",
+						height: "5vh",
 						display: 'flex',
 						"justify-content": 'center',
 						"align-content": 'center'
@@ -272,6 +278,17 @@ export default function App() {
 						{sortPlaying() ? <Pause /> : <Play />}
 					</button>
 					<input type="number" value={50} onChange={(e) => setItemCount(parseInt(e.target.value))}/>
+					</div>
+					<div
+					style={{
+						height: "5vh",
+						display: 'flex',
+						"justify-content": 'center',
+						"align-content": 'center'
+					}} id="controls"
+				>
+					{/* <label for="delay" style={{"text-align": 'center', "align-content": 'center', height: '32px', "margin": '4px', width: '6ch'}}>{delay()}ms</label> */}
+					<span>Delay of <input id="delay" onInput={(e) => setDelay(parseFloat(e.target.value))} value={delay()} step="1" type="number" min="1" max="1000"/>ms</span>
 				</div>
 			</Panel>
 			<PanelResizeHandle style={{width: "2px", "background-color": "#b9b7df", margin: '2px', "border-radius": '12px', border: '1px solid #80809b', cursor: "ew-resize"}}/>

@@ -10,6 +10,7 @@
   },
   "dependencies": {
     "@babel/standalone": "^7.24.6",
+    "@fontsource/inter": "^5.0.18",
     "@monaco-editor/loader": "^1.4.0",
     "@types/babel__standalone": "^7.1.7",
     "lucide-solid": "^0.379.0",

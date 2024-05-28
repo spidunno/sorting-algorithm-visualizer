@@ -15,12 +15,17 @@ type VisualizerNotSortedCommand = {
 	kind: "notSorted";
 	indexes: number[];
 };
+type VisualizerSetCommand = {
+	kind: "set";
+	values: [number, number][];
+};
 // eslint-disable-next-line @typescript-eslint/no-unused-vars
 type VisualizerCommand =
 	| VisualizerSwapCommand
 	| VisualizerCursorCommand
 	| VisualizerSortedCommand
-	| VisualizerNotSortedCommand;
+	| VisualizerNotSortedCommand
+	| VisualizerSetCommand;
 
 // eslint-disable-next-line @typescript-eslint/no-unused-vars
 function swap(firstIndex: number, secondIndex: number): VisualizerSwapCommand {
@@ -37,4 +42,10 @@ function sorted(indexes: number[]): VisualizerSortedCommand {
 // eslint-disable-next-line @typescript-eslint/no-unused-vars
 function notSorted(indexes: number[]): VisualizerNotSortedCommand {
 	return { kind: "notSorted", indexes };
+}
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
+function setItems(
+	values: [number, number][]
+): VisualizerSetCommand {
+	return { kind: "set", values };
 }

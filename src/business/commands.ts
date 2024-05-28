@@ -15,17 +15,27 @@ export type VisualizerNotSortedCommand = {
 	kind: "notSorted";
 	indexes: number[];
 };
+export type VisualizerSetCommand = {
+	kind: "set";
+	values: [number, number][];
+};
 export type VisualizerCommand =
 	| VisualizerSwapCommand
 	| VisualizerCursorCommand
 	| VisualizerSortedCommand
-	| VisualizerNotSortedCommand;
+	| VisualizerNotSortedCommand
+	| VisualizerSetCommand;
 
 export function swap(
 	firstIndex: number,
 	secondIndex: number
 ): VisualizerSwapCommand {
 	return { kind: "swap", firstIndex, secondIndex };
+}
+export function setItems(
+	values: [number, number][]
+): VisualizerSetCommand {
+	return { kind: "set", values };
 }
 export function notSorted(indexes: number[]): VisualizerNotSortedCommand {
 	return { kind: "notSorted", indexes };

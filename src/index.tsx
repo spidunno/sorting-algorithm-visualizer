@@ -1,6 +1,5 @@
 /* @refresh reload */
 import { render } from 'solid-js/web';
-import "solid-resizable-panels/styles.css";
 
 import './index.css';
 import App from './App';

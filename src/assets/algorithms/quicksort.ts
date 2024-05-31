@@ -1,4 +1,4 @@
-export default function* quicksort(items: number[]): Generator<VisualizerCommand, void, number[]> {
+export default function* quicksort(items: number[]): VisualizerGenerator {
 	yield* _quicksort(items, 0, items.length - 1);
 
 	// Final sweep, three at a time so it's faster
@@ -8,7 +8,7 @@ export default function* quicksort(items: number[]): Generator<VisualizerCommand
 	}
 }
 
-function* _quicksort(arr: number[], low: number, high: number): Generator<VisualizerCommand, void, number[]> {
+function* _quicksort(arr: number[], low: number, high: number): VisualizerGenerator {
 	arr = yield cursors([low, high]);
 	if (low < high) {
 		const [pivotIndex, updatedArr] = yield* partition(arr, low, high);

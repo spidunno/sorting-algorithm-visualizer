@@ -1,4 +1,4 @@
-export default function* bubbleSort(items: number[]): Generator<VisualizerCommand, void, number[]> {
+export default function* bubbleSort(items: number[]): VisualizerGenerator {
 	let clean = false;
 	while (!clean) {
 		clean = true;

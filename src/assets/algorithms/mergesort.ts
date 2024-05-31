@@ -1,5 +1,5 @@
-export default function* mergeSort(items: number[]): Generator<VisualizerCommand, void, number[]> {
-	function* merge(low: number, mid: number, high: number): Generator<VisualizerCommand, void, number[]> {
+export default function* mergeSort(items: number[]): VisualizerGenerator {
+	function* merge(low: number, mid: number, high: number): VisualizerGenerator {
 		let left = items.slice(low, mid + 1);
 		let right = items.slice(mid + 1, high + 1);
 		let i = 0, j = 0, k = low;
@@ -33,7 +33,7 @@ export default function* mergeSort(items: number[]): Generator<VisualizerCommand
 		}
 	}
 
-	function* sort(low: number, high: number): Generator<any, void, number[]> {
+	function* sort(low: number, high: number): VisualizerGenerator {
 		if (low < high) {
 			const mid = Math.floor((low + high) / 2);
 			yield* sort(low, mid);

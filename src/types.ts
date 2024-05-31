@@ -27,6 +27,8 @@ type VisualizerCommand =
 	| VisualizerNotSortedCommand
 	| VisualizerSetCommand;
 
+type VisualizerGenerator = Generator<VisualizerCommand, void, number[]>;
+
 // eslint-disable-next-line @typescript-eslint/no-unused-vars
 function swap(firstIndex: number, secondIndex: number): VisualizerSwapCommand {
 	return { kind: "swap", firstIndex, secondIndex };

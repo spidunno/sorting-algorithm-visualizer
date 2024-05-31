@@ -26,6 +26,8 @@ export type VisualizerCommand =
 	| VisualizerNotSortedCommand
 	| VisualizerSetCommand;
 
+export type VisualizerGenerator = Generator<VisualizerCommand, void, number[]>;
+
 export function swap(
 	firstIndex: number,
 	secondIndex: number
